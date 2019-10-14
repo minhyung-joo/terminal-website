@@ -40,6 +40,39 @@ const commandMap = {
     } else {
       return Array.from(lines);
     }
+  },
+  mkdir: (lines, params) => {
+    const dir = getDirectory(currentPath);
+    let errorMessage = null;
+    params.forEach(dirName => {
+      if (dirName.includes("/")) {
+        errorMessage = "mkdir: directory name cannot contain /";
+      } else {
+        dir.structure[dirName] = {
+          type: "directory",
+          structure: {}
+        };
+      }
+    });
+
+    if (errorMessage) {
+      return lines.concat(errorMessage);
+    } else {
+      return Array.from(lines);
+    }
+  },
+  echo: (lines, params) => {
+    let output = [];
+    params.forEach(param => {
+      const match = param.match(/"(?:[^"\\]|\\.)*"/);
+      if (match && param.length > 2) {
+        output.push(param.substring(1, param.length - 1));
+      } else {
+        output.push(param);
+      }
+    });
+
+    return lines.concat(output.join(" "));
   }
 };
 
@@ -68,18 +101,6 @@ const fileSystem = {
   }
 };
 
-/*
-function generateParentPointers(parent) {
-  Object.keys(parent.structure).forEach(dir => {
-    let child = parent.structure[dir];
-    child.parent = parent;
-    generateParentPointers(child);
-  });
-}
-
-generateParentPointers(fileSystem);
-*/
-
 function getDirectory(path) {
   const dirs = path.split("/");
   let pointer = fileSystem;
@@ -92,15 +113,54 @@ function getDirectory(path) {
   return pointer;
 }
 
+function parseInput(input) {
+  let inputStr = input.trim();
+  const firstSpaceIndex = inputStr.indexOf(" ");
+  if (firstSpaceIndex > 0) {
+    const command = inputStr.slice(0, firstSpaceIndex);
+    const args = inputStr.slice(firstSpaceIndex + 1);
+    const params = [];
+    let buffer = "";
+    let quoteMode = false;
+    let quoteCharacter = "";
+    for (let i = 0; i < args.length; i++) {
+      const c = args.charAt(i);
+      if (c === " " && buffer.length > 0 && !quoteMode) {
+        params.push(buffer);
+        buffer = "";
+      } else if (!quoteMode && (c === '"' || c === "'")) {
+        quoteMode = true;
+        quoteCharacter = c;
+      } else if (!quoteMode && c !== " ") {
+        buffer += c;
+      } else if (quoteMode && c !== quoteCharacter) {
+        buffer += c;
+      } else if (quoteMode && c === quoteCharacter) {
+        quoteCharacter = "";
+        quoteMode = false;
+        params.push(buffer);
+        buffer = "";
+      }
+    }
+    if (buffer.length > 0) {
+      params.push(buffer);
+    }
+
+    console.log(params);
+
+    return { command, params };
+  } else {
+    return { command: inputStr, params: [] };
+  }
+}
+
 function lines(state = [], action) {
   switch (action.type) {
     case ADD_LINE:
       let newState = null;
       if (state.length > 0) {
         const input = state[state.length - 1].substring(2);
-        const inputParts = input.split(" ");
-        const command = inputParts[0];
-        const params = inputParts.splice(1);
+        const { command, params } = parseInput(input);
         if (command.length > 0 && commandMap.hasOwnProperty(command)) {
           newState = commandMap[command](state, params);
         } else {
