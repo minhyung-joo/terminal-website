@@ -1,117 +1,18 @@
 import { combineReducers } from "redux";
-import { ADD_LINE, APPEND_TEXT, DELETE_ONE, PRINT_OUTPUT } from "../actions";
-
-const commandMap = {
-  clear: () => {
-    return [];
-  },
-  pwd: lines => {
-    return lines.concat(currentPath.length > 0 ? currentPath : "/");
-  },
-  ls: lines => {
-    const dir = getDirectory(currentPath);
-    if (Object.keys(dir.structure).length > 0) {
-      return lines.concat(Object.keys(dir.structure).join("\t"));
-    } else {
-      return Array.from(lines);
-    }
-  },
-  uname: lines => {
-    return lines.concat("Minhyung OS");
-  },
-  cd: (lines, params) => {
-    if (params.length > 0) {
-      const path = params[0];
-      const dir = getDirectory(currentPath);
-      if (dir.structure.hasOwnProperty(path)) {
-        currentPath += "/" + path;
-        return Array.from(lines);
-      } else if (path.substring(0, 2) === ".." && currentPath.length > 0) {
-        const dirs = currentPath.split("/");
-        if (dirs.length > 2) {
-          currentPath = dirs.slice(0, dirs.length - 1).join("/");
-        } else {
-          currentPath = "";
-        }
-        return Array.from(lines);
-      } else {
-        return lines.concat("No such file or directory");
-      }
-    } else {
-      return Array.from(lines);
-    }
-  },
-  mkdir: (lines, params) => {
-    const dir = getDirectory(currentPath);
-    let errorMessage = null;
-    params.forEach(dirName => {
-      if (dirName.includes("/")) {
-        errorMessage = "mkdir: directory name cannot contain /";
-      } else {
-        dir.structure[dirName] = {
-          type: "directory",
-          structure: {}
-        };
-      }
-    });
-
-    if (errorMessage) {
-      return lines.concat(errorMessage);
-    } else {
-      return Array.from(lines);
-    }
-  },
-  echo: (lines, params) => {
-    let output = [];
-    params.forEach(param => {
-      const match = param.match(/"(?:[^"\\]|\\.)*"/);
-      if (match && param.length > 2) {
-        output.push(param.substring(1, param.length - 1));
-      } else {
-        output.push(param);
-      }
-    });
-
-    return lines.concat(output.join(" "));
-  }
-};
-
-let currentPath = "";
-
-const fileSystem = {
-  type: "directory",
-  structure: {
-    bin: {
-      type: "directory",
-      structure: {}
-    },
-    home: {
-      type: "directory",
-      structure: {
-        mjoo: {
-          type: "directory",
-          structure: {}
-        }
-      }
-    },
-    var: {
-      type: "directory",
-      structure: {}
-    }
-  }
-};
-
-function getDirectory(path) {
-  const dirs = path.split("/");
-  let pointer = fileSystem;
-  dirs.forEach(dir => {
-    if (dir.length > 0 && pointer.structure.hasOwnProperty(dir)) {
-      pointer = pointer.structure[dir];
-    }
-  });
-
-  return pointer;
-}
+import {
+  ADD_LINE,
+  APPEND_TEXT,
+  DELETE_ONE,
+  PRINT_OUTPUT,
+  MOVE_UP_HISTORY,
+  MOVE_DOWN_HISTORY
+} from "../actions";
+import {
+  commandMap,
+  moveUpHistory,
+  moveDownHistory,
+  pushToHistory
+} from "../terminal";
 
 function parseInput(input) {
   let inputStr = input.trim();
@@ -146,8 +47,6 @@ function parseInput(input) {
       params.push(buffer);
     }
 
-    console.log(params);
-
     return { command, params };
   } else {
     return { command: inputStr, params: [] };
@@ -160,9 +59,15 @@ function lines(state = [], action) {
       let newState = null;
       if (state.length > 0) {
         const input = state[state.length - 1].substring(2);
-        const { command, params } = parseInput(input);
-        if (command.length > 0 && commandMap.hasOwnProperty(command)) {
-          newState = commandMap[command](state, params);
+        if (input.length > 0) {
+          const { command, params } = parseInput(input);
+          if (command.length > 0 && commandMap.hasOwnProperty(command)) {
+            newState = commandMap[command](state, params);
+          } else {
+            newState = Array.from(state);
+          }
+
+          pushToHistory(input);
         } else {
           newState = Array.from(state);
         }
@@ -188,6 +93,32 @@ function lines(state = [], action) {
 
         return value;
       });
+    case MOVE_UP_HISTORY:
+      const upHistory = moveUpHistory();
+      if (upHistory) {
+        return state.map((value, index) => {
+          if (index === state.length - 1) {
+            return "$ " + upHistory;
+          }
+
+          return value;
+        });
+      } else {
+        return state;
+      }
+    case MOVE_DOWN_HISTORY:
+      const downHistory = moveDownHistory();
+      if (downHistory) {
+        return state.map((value, index) => {
+          if (index === state.length - 1) {
+            return "$ " + downHistory;
+          }
+
+          return value;
+        });
+      } else {
+        return state;
+      }
     case PRINT_OUTPUT:
       return state.concat(action.lines);
     default:
