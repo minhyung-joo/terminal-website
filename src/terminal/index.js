@@ -22,6 +22,8 @@ const fileSystem = {
   }
 };
 
+const variables = {};
+
 let historyPointer = -1;
 const history = [];
 export const commandMap = {
@@ -121,15 +123,22 @@ export const commandMap = {
   echo: (lines, params) => {
     let output = [];
     params.forEach(param => {
-      const match = param.match(/"(?:[^"\\]|\\.)*"/);
-      if (match && param.length > 2) {
-        output.push(param.substring(1, param.length - 1));
+      if (param.charAt(0) === "$") {
+        const variable = variables[param.substring(1)];
+        output.push(variable ? variable : "");
       } else {
         output.push(param);
       }
     });
 
     return lines.concat(output.join(" "));
+  },
+  export: (lines, params) => {
+    params.forEach(param => {
+      const paramParts = param.split("=");
+      variables[paramParts[0]] = paramParts[1];
+    });
+    return Array.from(lines);
   }
 };
 
