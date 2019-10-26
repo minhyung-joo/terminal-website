@@ -1,19 +1,23 @@
 import React from "react";
 import "./Terminal.scss";
 
-const Terminal = ({ lines }) => {
-  const text = lines.reduce((accumulator, line, index) => {
-    if (index === lines.length - 1) {
-      return accumulator + line;
-    } else {
-      return accumulator + line + "\n";
-    }
-  }, "");
+const Terminal = ({ lines, pointer }) => {
+  const lastLine = lines[lines.length - 1] || "";
 
   return (
     <div className="terminal">
-      {text}
-      <span className="cursor"> </span>
+      {lines.slice(0, lines.length - 1).map(line => (
+        <div>{line}</div>
+      ))}
+      <div>
+        {
+          <div>
+            {lastLine.substring(0, pointer)}
+            <span className="cursor">{lastLine.charAt(pointer) || " "}</span>
+            {lastLine.substring(pointer + 1)}
+          </div>
+        }
+      </div>
     </div>
   );
 };

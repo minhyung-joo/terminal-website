@@ -7,7 +7,9 @@ import {
   deleteOne,
   printOutput,
   moveUpHistory,
-  moveDownHistory
+  moveDownHistory,
+  moveCursorLeft,
+  moveCursorRight
 } from "./actions";
 import "./index.scss";
 
@@ -19,7 +21,9 @@ class App extends React.Component {
       deleteOne,
       printOutput,
       moveUpHistory,
-      moveDownHistory
+      moveDownHistory,
+      moveCursorLeft,
+      moveCursorRight
     } = this.props;
     printOutput([
       "Welcome to Minhyung's terminal",
@@ -42,8 +46,10 @@ class App extends React.Component {
         moveDownHistory();
       } else if (keyCode === 37) {
         // Left arrow
+        moveCursorLeft();
       } else if (keyCode === 39) {
         // Right arrow
+        moveCursorRight();
       } else if (
         (keyCode >= 65 && keyCode <= 90) ||
         keyCode === 32 ||
@@ -60,13 +66,16 @@ class App extends React.Component {
   render() {
     return (
       <div className="window">
-        <Terminal lines={this.props.lines} />
+        <Terminal lines={this.props.lines} pointer={this.props.pointer} />
       </div>
     );
   }
 }
 
-const mapStateToProps = ({ lines }) => ({ lines });
+const mapStateToProps = ({ terminal }) => ({
+  lines: terminal.lines,
+  pointer: terminal.pointer
+});
 
 const mapDispatchToProps = dispatch => ({
   addLine: () => dispatch(addLine()),
@@ -74,7 +83,9 @@ const mapDispatchToProps = dispatch => ({
   deleteOne: () => dispatch(deleteOne()),
   printOutput: lines => dispatch(printOutput(lines)),
   moveUpHistory: () => dispatch(moveUpHistory()),
-  moveDownHistory: () => dispatch(moveDownHistory())
+  moveDownHistory: () => dispatch(moveDownHistory()),
+  moveCursorLeft: () => dispatch(moveCursorLeft()),
+  moveCursorRight: () => dispatch(moveCursorRight())
 });
 
 export default connect(

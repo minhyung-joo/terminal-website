@@ -5,6 +5,8 @@ export const ADD_LINE = "ADD_LINE";
 export const APPEND_TEXT = "APPEND_TEXT";
 export const DELETE_ONE = "DELETE_ONE";
 export const PRINT_OUTPUT = "PRINT_OUTPUT";
+export const MOVE_CURSOR_LEFT = "MOVE_CURSOR_LEFT";
+export const MOVE_CURSOR_RIGHT = "MOVE_CURSOR_RIGHT";
 export const MOVE_UP_HISTORY = "MOVE_UP_HISTORY";
 export const MOVE_DOWN_HISTORY = "MOVE_DOWN_HISTORY";
 
@@ -25,6 +27,14 @@ export function deleteOne() {
 
 export function printOutput(lines) {
   return { type: PRINT_OUTPUT, lines };
+}
+
+export function moveCursorLeft() {
+  return { type: MOVE_CURSOR_LEFT };
+}
+
+export function moveCursorRight() {
+  return { type: MOVE_CURSOR_RIGHT };
 }
 
 export function moveUpHistory() {

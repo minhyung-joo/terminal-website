@@ -5,7 +5,9 @@ import {
   DELETE_ONE,
   PRINT_OUTPUT,
   MOVE_UP_HISTORY,
-  MOVE_DOWN_HISTORY
+  MOVE_DOWN_HISTORY,
+  MOVE_CURSOR_LEFT,
+  MOVE_CURSOR_RIGHT
 } from "../actions";
 import {
   commandMap,
@@ -13,6 +15,11 @@ import {
   moveDownHistory,
   pushToHistory
 } from "../terminal";
+
+const initialState = {
+  lines: [],
+  pointer: 2
+};
 
 function parseInput(input) {
   let inputStr = input.trim();
@@ -53,55 +60,72 @@ function parseInput(input) {
   }
 }
 
-function lines(state = [], action) {
+function terminal(state = initialState, action) {
+  const pointer = state.pointer;
+  const lines = state.lines;
+
   switch (action.type) {
     case ADD_LINE:
       let newState = null;
-      if (state.length > 0) {
-        const input = state[state.length - 1].substring(2);
+      if (lines.length > 0) {
+        const input = lines[lines.length - 1].substring(2);
         if (input.length > 0) {
           const { command, params } = parseInput(input);
           if (command.length > 0 && commandMap.hasOwnProperty(command)) {
-            newState = commandMap[command](state, params);
-          } else {
-            newState = Array.from(state);
+            newState = commandMap[command](lines, params);
           }
 
           pushToHistory(input);
-        } else {
-          newState = Array.from(state);
         }
-      } else {
-        newState = Array.from(state);
       }
 
-      newState.push("$ ");
-      return newState;
+      return Object.assign({}, state, {
+        lines: newState ? newState.concat("$ ") : lines.concat("$ "),
+        pointer: 2
+      });
     case APPEND_TEXT:
-      return state.map((value, index) => {
-        if (index === state.length - 1) {
-          return value + action.text;
-        }
-
-        return value;
-      });
-    case DELETE_ONE:
-      return state.map((value, index) => {
-        if (index === state.length - 1 && value.length >= 3) {
-          return value.substring(0, value.length - 1);
-        }
-
-        return value;
-      });
-    case MOVE_UP_HISTORY:
-      const upHistory = moveUpHistory();
-      if (upHistory) {
-        return state.map((value, index) => {
-          if (index === state.length - 1) {
-            return "$ " + upHistory;
+      return Object.assign({}, state, {
+        lines: state.lines.map((value, index) => {
+          if (index === state.lines.length - 1) {
+            return value.slice(0, pointer) + action.text + value.slice(pointer);
           }
 
           return value;
+        }),
+        pointer: state.pointer + 1
+      });
+    case DELETE_ONE:
+      return lines[lines.length - 1].length > 2 && pointer > 2
+        ? Object.assign({}, state, {
+            lines: state.lines.map((value, index) => {
+              if (index === state.lines.length - 1 && value.length >= 3) {
+                return value.slice(0, pointer - 1) + value.slice(pointer);
+              }
+
+              return value;
+            }),
+            pointer: state.pointer - 1
+          })
+        : state;
+    case MOVE_CURSOR_LEFT:
+      return pointer > 2
+        ? Object.assign({}, state, { pointer: pointer - 1 })
+        : state;
+    case MOVE_CURSOR_RIGHT:
+      return pointer < lines[lines.length - 1].length
+        ? Object.assign({}, state, { pointer: pointer + 1 })
+        : state;
+    case MOVE_UP_HISTORY:
+      const upHistory = moveUpHistory();
+      if (upHistory) {
+        return Object.assign({}, state, {
+          lines: state.lines.map((value, index) => {
+            if (index === state.lines.length - 1) {
+              return "$ " + upHistory;
+            }
+
+            return value;
+          })
         });
       } else {
         return state;
@@ -109,25 +133,29 @@ function lines(state = [], action) {
     case MOVE_DOWN_HISTORY:
       const downHistory = moveDownHistory();
       if (downHistory) {
-        return state.map((value, index) => {
-          if (index === state.length - 1) {
-            return "$ " + downHistory;
-          }
+        return Object.assign({}, state, {
+          lines: state.lines.map((value, index) => {
+            if (index === state.lines.length - 1) {
+              return "$ " + downHistory;
+            }
 
-          return value;
+            return value;
+          })
         });
       } else {
         return state;
       }
     case PRINT_OUTPUT:
-      return state.concat(action.lines);
+      return Object.assign({}, state, {
+        lines: state.lines.concat(action.lines)
+      });
     default:
       return state;
   }
 }
 
 const terminalApp = combineReducers({
-  lines
+  terminal
 });
 
 export default terminalApp;
