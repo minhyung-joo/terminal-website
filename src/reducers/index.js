@@ -13,7 +13,8 @@ import {
   commandMap,
   moveUpHistory,
   moveDownHistory,
-  pushToHistory
+  pushToHistory,
+  handleChange
 } from "../terminal";
 
 const initialState = {
@@ -87,7 +88,10 @@ function terminal(state = initialState, action) {
       return Object.assign({}, state, {
         lines: state.lines.map((value, index) => {
           if (index === state.lines.length - 1) {
-            return value.slice(0, pointer) + action.text + value.slice(pointer);
+            const changedValue =
+              value.slice(0, pointer) + action.text + value.slice(pointer);
+            handleChange(changedValue.substring(2));
+            return changedValue;
           }
 
           return value;
@@ -99,7 +103,10 @@ function terminal(state = initialState, action) {
         ? Object.assign({}, state, {
             lines: state.lines.map((value, index) => {
               if (index === state.lines.length - 1 && value.length >= 3) {
-                return value.slice(0, pointer - 1) + value.slice(pointer);
+                const changedValue =
+                  value.slice(0, pointer - 1) + value.slice(pointer);
+                handleChange(changedValue.substring(2));
+                return changedValue;
               }
 
               return value;
@@ -117,34 +124,28 @@ function terminal(state = initialState, action) {
         : state;
     case MOVE_UP_HISTORY:
       const upHistory = moveUpHistory();
-      if (upHistory) {
-        return Object.assign({}, state, {
-          lines: state.lines.map((value, index) => {
-            if (index === state.lines.length - 1) {
-              return "$ " + upHistory;
-            }
+      return Object.assign({}, state, {
+        lines: state.lines.map((value, index) => {
+          if (index === state.lines.length - 1) {
+            return "$ " + upHistory;
+          }
 
-            return value;
-          })
-        });
-      } else {
-        return state;
-      }
+          return value;
+        }),
+        pointer: upHistory.length + 2
+      });
     case MOVE_DOWN_HISTORY:
       const downHistory = moveDownHistory();
-      if (downHistory) {
-        return Object.assign({}, state, {
-          lines: state.lines.map((value, index) => {
-            if (index === state.lines.length - 1) {
-              return "$ " + downHistory;
-            }
+      return Object.assign({}, state, {
+        lines: state.lines.map((value, index) => {
+          if (index === state.lines.length - 1) {
+            return "$ " + downHistory;
+          }
 
-            return value;
-          })
-        });
-      } else {
-        return state;
-      }
+          return value;
+        }),
+        pointer: downHistory.length + 2
+      });
     case PRINT_OUTPUT:
       return Object.assign({}, state, {
         lines: state.lines.concat(action.lines)

@@ -22,9 +22,11 @@ const fileSystem = {
   }
 };
 
-const variables = {};
+const variables = { HISTSIZE: 500 };
 
-let historyPointer = -1;
+let currentBuffer = "";
+let historyPointer = 0;
+let historyEdits = {};
 const history = [];
 export const commandMap = {
   clear: () => {
@@ -139,6 +141,14 @@ export const commandMap = {
       variables[paramParts[0]] = paramParts[1];
     });
     return Array.from(lines);
+  },
+  history: (lines, param) => {
+    let historyOutput = "";
+    history.forEach(
+      (item, index) =>
+        (historyOutput = historyOutput.concat(`\t${index + 1}  ${item}\n`))
+    );
+    return lines.concat(historyOutput);
   }
 };
 
@@ -165,13 +175,40 @@ function getDirectory(path) {
 }
 
 export const moveUpHistory = () => {
-  if (historyPointer + 1 < history.length) {
-    return history[++historyPointer];
+  if (historyPointer > 0) {
+    return history[--historyPointer];
+  } else {
+    return history[historyPointer];
   }
 };
 export const moveDownHistory = () => {
-  if (historyPointer - 1 > -1) {
-    return history[--historyPointer];
+  if (historyPointer < history.length - 1) {
+    return history[++historyPointer];
+  } else {
+    if (historyPointer < history.length) {
+      historyPointer++;
+    }
+
+    return currentBuffer;
   }
 };
-export const pushToHistory = command => history.push(command);
+export const pushToHistory = command => {
+  if (historyPointer === history.length) {
+    history.push(command);
+  } else {
+    Object.keys(historyEdits).forEach(indexStr => {
+      const editedIndex = parseInt(indexStr, 10);
+      history[editedIndex] = historyEdits[indexStr];
+    });
+  }
+
+  currentBuffer = "";
+  historyPointer = history.length;
+};
+export const handleChange = value => {
+  if (historyPointer === history.length) {
+    currentBuffer = value;
+  } else {
+    historyEdits[historyPointer] = value;
+  }
+};
