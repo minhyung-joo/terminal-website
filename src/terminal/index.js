@@ -142,13 +142,29 @@ export const commandMap = {
     });
     return Array.from(lines);
   },
-  history: (lines, param) => {
+  history: (lines, params) => {
     let historyOutput = "";
     history.forEach(
       (item, index) =>
         (historyOutput = historyOutput.concat(`\t${index + 1}  ${item}\n`))
     );
     return lines.concat(historyOutput);
+  },
+  touch: (lines, params) => {
+    const dir = getDirectory(currentPath);
+    let errorMessage = null;
+    params.forEach(fileName => {
+      dir.structure[fileName] = {
+        type: "file",
+        data: ""
+      };
+    });
+
+    if (errorMessage) {
+      return lines.concat(errorMessage);
+    } else {
+      return Array.from(lines);
+    }
   }
 };
 
