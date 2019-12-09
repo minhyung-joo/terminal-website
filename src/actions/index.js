@@ -25,8 +25,8 @@ export function deleteOne() {
   return { type: DELETE_ONE };
 }
 
-export function printOutput(lines) {
-  return { type: PRINT_OUTPUT, lines };
+export function printOutput(text) {
+  return { type: PRINT_OUTPUT, text };
 }
 
 export function moveCursorLeft() {

@@ -18,8 +18,9 @@ import {
 } from "../terminal";
 
 const initialState = {
-  lines: [],
-  pointer: 2
+  stdout: '',
+  stdin: '',
+  pointer: 0
 };
 
 function parseInput(input) {
@@ -62,94 +63,76 @@ function parseInput(input) {
 }
 
 function terminal(state = initialState, action) {
-  const pointer = state.pointer;
-  const lines = state.lines;
-
   switch (action.type) {
     case ADD_LINE:
-      let newState = null;
-      if (lines.length > 0) {
-        const input = lines[lines.length - 1].substring(2);
-        if (input.length > 0) {
-          const { command, params } = parseInput(input);
-          if (command.length > 0 && commandMap.hasOwnProperty(command)) {
-            newState = commandMap[command](lines, params);
-          }
+      const input = state.stdin;
+      if (input.length > 0) {
+        let newState = null;
+        const { command, params } = parseInput(input);
+        if (command.length > 0 && commandMap.hasOwnProperty(command)) {
+          newState = commandMap[command](state, params);
+        }
 
-          pushToHistory(input);
+        pushToHistory(input);
+        if (newState) {
+          return {
+            ...state,
+            ...newState,
+            stdin: "",
+            pointer: 0
+          }
         }
       }
 
-      return Object.assign({}, state, {
-        lines: newState ? newState.concat("$ ") : lines.concat("$ "),
-        pointer: 2
-      });
+      return {
+        stdin: "",
+        stdout: state.stdout.concat("$ ", state.stdin, "\n"),
+        pointer: 0
+      }
     case APPEND_TEXT:
-      return Object.assign({}, state, {
-        lines: state.lines.map((value, index) => {
-          if (index === state.lines.length - 1) {
-            const changedValue =
-              value.slice(0, pointer) + action.text + value.slice(pointer);
-            handleChange(changedValue.substring(2));
-            return changedValue;
-          }
-
-          return value;
-        }),
+      const changedValue = state.stdin.slice(0, state.pointer) + action.text + state.stdin.slice(state.pointer);
+      handleChange(changedValue);
+      return {
+        ...state,
+        stdin: changedValue,
         pointer: state.pointer + 1
-      });
+      };
     case DELETE_ONE:
-      return lines[lines.length - 1].length > 2 && pointer > 2
-        ? Object.assign({}, state, {
-            lines: state.lines.map((value, index) => {
-              if (index === state.lines.length - 1 && value.length >= 3) {
-                const changedValue =
-                  value.slice(0, pointer - 1) + value.slice(pointer);
-                handleChange(changedValue.substring(2));
-                return changedValue;
-              }
+      if (state.stdin.length > 0 && state.pointer > 0) {
+        const changedValue = state.stdin.slice(0, state.pointer - 1) + state.stdin.slice(state.pointer);
+        handleChange(changedValue);
+        return {
+          ...state,
+          stdin: changedValue,
+          pointer: state.pointer - 1,
+        }
+      }
 
-              return value;
-            }),
-            pointer: state.pointer - 1
-          })
-        : state;
+      return state;
     case MOVE_CURSOR_LEFT:
-      return pointer > 2
-        ? Object.assign({}, state, { pointer: pointer - 1 })
+      return state.pointer > 2
+        ? Object.assign({}, state, { pointer: state.pointer - 1 })
         : state;
     case MOVE_CURSOR_RIGHT:
-      return pointer < lines[lines.length - 1].length
-        ? Object.assign({}, state, { pointer: pointer + 1 })
+      return state.pointer < state.stdin.length
+        ? Object.assign({}, state, { pointer: state.pointer + 1 })
         : state;
     case MOVE_UP_HISTORY:
       const upHistory = moveUpHistory();
-      return Object.assign({}, state, {
-        lines: state.lines.map((value, index) => {
-          if (index === state.lines.length - 1) {
-            return "$ " + upHistory;
-          }
-
-          return value;
-        }),
-        pointer: upHistory.length + 2
-      });
+      return {
+        ...state,
+        stdin: upHistory,
+        pointer: upHistory.length
+      };
     case MOVE_DOWN_HISTORY:
       const downHistory = moveDownHistory();
-      return Object.assign({}, state, {
-        lines: state.lines.map((value, index) => {
-          if (index === state.lines.length - 1) {
-            return "$ " + downHistory;
-          }
-
-          return value;
-        }),
-        pointer: downHistory.length + 2
-      });
+      return {
+        ...state,
+        stdin: downHistory,
+        pointer: downHistory.length
+      };
     case PRINT_OUTPUT:
-      return Object.assign({}, state, {
-        lines: state.lines.concat(action.lines)
-      });
+      return { ...state, stdout: state.stdout.concat(action.text) };
     default:
       return state;
   }

@@ -25,12 +25,7 @@ class App extends React.Component {
       moveCursorLeft,
       moveCursorRight
     } = this.props;
-    printOutput([
-      "Welcome to Minhyung's terminal",
-      "Feel free to play around with usual commands",
-      "You can learn about me by snooping around",
-      "$ "
-    ]);
+    printOutput("Welcome to Minhyung's terminal\nFeel free to play around with usual commands\nYou can learn about me by snooping around\n");
 
     window.addEventListener("keydown", e => {
       const keyCode = e.keyCode;
@@ -66,14 +61,15 @@ class App extends React.Component {
   render() {
     return (
       <div className="window">
-        <Terminal lines={this.props.lines} pointer={this.props.pointer} />
+        <Terminal stdout={this.props.stdout} stdin={this.props.stdin} pointer={this.props.pointer} />
       </div>
     );
   }
 }
 
 const mapStateToProps = ({ terminal }) => ({
-  lines: terminal.lines,
+  stdin: terminal.stdin,
+  stdout: terminal.stdout,
   pointer: terminal.pointer
 });
 
@@ -81,7 +77,7 @@ const mapDispatchToProps = dispatch => ({
   addLine: () => dispatch(addLine()),
   appendText: text => dispatch(appendText(text)),
   deleteOne: () => dispatch(deleteOne()),
-  printOutput: lines => dispatch(printOutput(lines)),
+  printOutput: text => dispatch(printOutput(text)),
   moveUpHistory: () => dispatch(moveUpHistory()),
   moveDownHistory: () => dispatch(moveDownHistory()),
   moveCursorLeft: () => dispatch(moveCursorLeft()),

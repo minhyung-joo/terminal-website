@@ -1,23 +1,15 @@
 import React from "react";
 import "./Terminal.scss";
 
-const Terminal = ({ lines, pointer }) => {
-  const lastLine = lines[lines.length - 1] || "";
-
+const Terminal = ({ stdin, stdout, pointer }) => {
   return (
     <div className="terminal">
-      {lines.slice(0, lines.length - 1).map(line => (
-        <div>{line}</div>
-      ))}
-      <div>
-        {
-          <div>
-            {lastLine.substring(0, pointer)}
-            <span className="cursor">{lastLine.charAt(pointer) || " "}</span>
-            {lastLine.substring(pointer + 1)}
-          </div>
-        }
-      </div>
+        <div>
+          {stdout + "$ "}
+          {stdin.slice(0, pointer)}
+          <span className="cursor">{stdin.charAt(pointer) || " "}</span>
+          {stdin.slice(pointer + 1)}
+        </div>
     </div>
   );
 };
