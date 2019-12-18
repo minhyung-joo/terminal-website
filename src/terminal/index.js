@@ -29,24 +29,19 @@ let historyPointer = 0;
 let historyEdits = {};
 const history = [];
 export const commandMap = {
-  clear: (state, params) => {
-    return { ...state, stdout: "" };
+  pwd: (params) => {
+    return currentPath.length > 0 ? currentPath : "/";
   },
-  pwd: (state, params) => {
-    return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n" + (currentPath.length > 0 ? currentPath : "/") + "\n") };
-  },
-  ls: (state, params) => {
+  ls: (params) => {
     const dir = getDirectory(currentPath);
     if (Object.keys(dir.structure).length > 0) {
-      return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n" + Object.keys(dir.structure).join("\t") + "\n") };
-    } else {
-      return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n") };
+      return Object.keys(dir.structure).join("\t");
     }
   },
-  uname: (state, params) => {
-    return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n" + "Minhyung OS" + "\n") };
+  uname: (params) => {
+    return "Minhyung OS";
   },
-  cd: (state, params) => {
+  cd: (params) => {
     if (params.length > 0) {
       const path = params[0];
       let dir = getDirectory(currentPath);
@@ -72,13 +67,12 @@ export const commandMap = {
 
                 dir = getDirectory(currentPath);
               } else {
-                return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\nNo such file or directory\n") };
+                return "No such file or directory";
               }
             } else if (dir.structure.hasOwnProperty(subPath)) {
               currentPath += "/" + subPath;
-              dir = getDirectory(currentPath);
             } else {
-              return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\nNo such file or directory\n") };
+              return "No such file or directory";
             }
           }
         }
@@ -93,21 +87,16 @@ export const commandMap = {
             currentPath = "";
           }
         } else if (path !== ".") {
-          return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\nNo such file or directory\n") };
+          return "No such file or directory";
         }
       }
-
-      return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n") };
-    } else {
-      return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n") };
     }
   },
-  mkdir: (state, params) => {
+  mkdir: (params) => {
     const dir = getDirectory(currentPath);
-    let errorMessage = null;
     params.forEach(dirName => {
       if (dirName.includes("/")) {
-        errorMessage = "mkdir: directory name cannot contain /";
+        return "mkdir: directory name cannot contain /";
       } else {
         dir.structure[dirName] = {
           type: "directory",
@@ -115,14 +104,8 @@ export const commandMap = {
         };
       }
     });
-
-    if (errorMessage) {
-      return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n" + errorMessage + "\n") };
-    } else {
-      return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n") };
-    }
   },
-  echo: (state, params) => {
+  echo: (params) => {
     let output = [];
     params.forEach(param => {
       if (param.charAt(0) === "$") {
@@ -133,38 +116,30 @@ export const commandMap = {
       }
     });
 
-    return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n" + output.join(" ") + "\n") };
+    return output.join(" ");
   },
-  export: (state, params) => {
+  export: (params) => {
     params.forEach(param => {
       const paramParts = param.split("=");
       variables[paramParts[0]] = paramParts[1];
     });
-    return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n") };
   },
-  history: (state, params) => {
+  history: (params) => {
     let historyOutput = "";
     history.forEach(
       (item, index) =>
         (historyOutput = historyOutput.concat(`\t${index + 1}  ${item}\n`))
     );
-    return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n" + historyOutput + "\n") };
+    return historyOutput;
   },
-  touch: (state, params) => {
+  touch: (params) => {
     const dir = getDirectory(currentPath);
-    let errorMessage = null;
     params.forEach(fileName => {
       dir.structure[fileName] = {
         type: "file",
         data: ""
       };
     });
-
-    if (errorMessage) {
-      return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n" + errorMessage + "\n") };
-    } else {
-      return { ...state, stdout: state.stdout.concat("$ ", state.stdin, "\n") };
-    }
   }
 };
 

@@ -67,17 +67,25 @@ function terminal(state = initialState, action) {
     case ADD_LINE:
       const input = state.stdin;
       if (input.length > 0) {
-        let newState = null;
+        let output = null;
         const { command, params } = parseInput(input);
-        if (command.length > 0 && commandMap.hasOwnProperty(command)) {
-          newState = commandMap[command](state, params);
+        if (command === 'clear') {
+          return {
+            ...state,
+            stdout: "",
+            stdin: "",
+            pointer: 0
+          }
+        }
+        else if (command.length > 0 && commandMap.hasOwnProperty(command)) {
+          output = commandMap[command](params);
         }
 
         pushToHistory(input);
-        if (newState) {
+        if (output) {
           return {
             ...state,
-            ...newState,
+            stdout: state.stdout + "$ " + state.stdin + "\n" + output + "\n",
             stdin: "",
             pointer: 0
           }
