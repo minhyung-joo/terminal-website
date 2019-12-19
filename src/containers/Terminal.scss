@@ -9,6 +9,15 @@
   overflow: auto;
 }
 
+.measurement {
+  position: absolute;
+  top: -100px;
+}
+
+.stdin {
+  display: inline;
+}
+
 .cursor {
   background-color: rgba(255, 255, 255, 0.5);
 }
