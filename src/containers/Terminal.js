@@ -11,15 +11,33 @@ const Terminal = ({ stdin, stdout, pointer }) => {
     if (terminalRef.current && fontRef.current) {
       terminalWidth = terminalRef.current.offsetWidth;
       fontWidth = fontRef.current.offsetWidth;
-      cutoffIndex = terminalWidth / fontWidth;
+      cutoffIndex = Math.floor(terminalWidth / fontWidth);
     }
   }, [terminalRef.current, fontRef.current]);
 
-  if (cutoffIndex > 0 && stdin.length > cutoffIndex) {
-    const cuts = stdin.length / cutoffIndex;
+  stdout = stdout.split("\n").map(line => {
+    if (cutoffIndex > 0 && line.length > cutoffIndex) {
+      const cuts = line.length / cutoffIndex;
+      let newLine = [];
+      for (let i = 0; i <= cuts; i++) {
+        newLine.push(line.slice(cutoffIndex * i, cutoffIndex * (i+1)));
+      }
+      
+      return newLine.join("\n");
+    }
+
+    return line;
+  }).join("\n");
+
+  if (cutoffIndex > 0 && stdin.length > cutoffIndex - 2) {
+    const cuts = (stdin.length + 2) / cutoffIndex;
     let newStdin = [];
     for (let i = 0; i <= cuts; i++) {
-      newStdin.push(stdin.slice(cutoffIndex * i, cutoffIndex * (i+1)));
+      if (i === 0) {
+        newStdin.push(stdin.slice(0, cutoffIndex * (i+1) - 2));  
+      } else {
+        newStdin.push(stdin.slice(cutoffIndex * i - 2, cutoffIndex * (i+1) - 2));
+      }
     }
 
     pointer += cuts;
