@@ -18,8 +18,8 @@ import {
 } from "../terminal";
 
 const initialState = {
-  stdout: '',
-  stdin: '',
+  stdout: "",
+  stdin: "",
   pointer: 0
 };
 
@@ -69,16 +69,19 @@ function terminal(state = initialState, action) {
       if (input.length > 0) {
         let output = null;
         const { command, params } = parseInput(input);
-        if (command === 'clear') {
+        if (command === "clear") {
           return {
             ...state,
             stdout: "",
             stdin: "",
             pointer: 0
+          };
+        } else if (command.length > 0) {
+          if (commandMap.hasOwnProperty(command)) {
+            output = commandMap[command](params);
+          } else {
+            output = command + ": command not found";
           }
-        }
-        else if (command.length > 0 && commandMap.hasOwnProperty(command)) {
-          output = commandMap[command](params);
         }
 
         pushToHistory(input);
@@ -88,7 +91,7 @@ function terminal(state = initialState, action) {
             stdout: state.stdout + "$ " + state.stdin + "\n" + output + "\n",
             stdin: "",
             pointer: 0
-          }
+          };
         }
       }
 
@@ -96,9 +99,12 @@ function terminal(state = initialState, action) {
         stdin: "",
         stdout: state.stdout.concat("$ ", state.stdin, "\n"),
         pointer: 0
-      }
+      };
     case APPEND_TEXT:
-      const changedValue = state.stdin.slice(0, state.pointer) + action.text + state.stdin.slice(state.pointer);
+      const changedValue =
+        state.stdin.slice(0, state.pointer) +
+        action.text +
+        state.stdin.slice(state.pointer);
       handleChange(changedValue);
       return {
         ...state,
@@ -107,13 +113,15 @@ function terminal(state = initialState, action) {
       };
     case DELETE_ONE:
       if (state.stdin.length > 0 && state.pointer > 0) {
-        const changedValue = state.stdin.slice(0, state.pointer - 1) + state.stdin.slice(state.pointer);
+        const changedValue =
+          state.stdin.slice(0, state.pointer - 1) +
+          state.stdin.slice(state.pointer);
         handleChange(changedValue);
         return {
           ...state,
           stdin: changedValue,
-          pointer: state.pointer - 1,
-        }
+          pointer: state.pointer - 1
+        };
       }
 
       return state;

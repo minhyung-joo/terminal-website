@@ -29,21 +29,31 @@ let historyPointer = 0;
 let historyEdits = {};
 const history = [];
 export const commandMap = {
-  pwd: (params) => {
+  help: params => {
+    const lines = [];
+    lines.push("Currently available commands:");
+    Object.keys(commandMap).forEach(command => {
+      if (command !== "help") {
+        lines.push(command);
+      }
+    });
+    return lines.join("\n");
+  },
+  pwd: params => {
     return currentPath.length > 0 ? currentPath : "/";
   },
-  ls: (params) => {
+  ls: params => {
     const dir = getDirectory(currentPath);
     if (Object.keys(dir.structure).length > 0) {
       return Object.keys(dir.structure).join("\t");
     }
   },
-  uname: (params) => {
+  uname: params => {
     return "Minhyung OS";
   },
-  cd: (params) => {
+  cd: params => {
     if (params.length > 0) {
-      const path = params[0];
+      let path = params[0];
       let dir = getDirectory(currentPath);
       if (path.includes("/")) {
         if (path.charAt(0) === "/") {
@@ -53,6 +63,9 @@ export const commandMap = {
             currentPath = path;
           }
         } else {
+          if (path.charAt(path.length - 1) === "/") {
+            path = path.substring(0, path.length - 1);
+          }
           const paths = path.split("/");
           for (let i = 0; i < paths.length; i++) {
             const subPath = paths[i];
@@ -92,7 +105,7 @@ export const commandMap = {
       }
     }
   },
-  mkdir: (params) => {
+  mkdir: params => {
     const dir = getDirectory(currentPath);
     params.forEach(dirName => {
       if (dirName.includes("/")) {
@@ -105,7 +118,7 @@ export const commandMap = {
       }
     });
   },
-  echo: (params) => {
+  echo: params => {
     let output = [];
     params.forEach(param => {
       if (param.charAt(0) === "$") {
@@ -118,13 +131,13 @@ export const commandMap = {
 
     return output.join(" ");
   },
-  export: (params) => {
+  export: params => {
     params.forEach(param => {
       const paramParts = param.split("=");
       variables[paramParts[0]] = paramParts[1];
     });
   },
-  history: (params) => {
+  history: params => {
     let historyOutput = "";
     history.forEach(
       (item, index) =>
@@ -132,7 +145,7 @@ export const commandMap = {
     );
     return historyOutput;
   },
-  touch: (params) => {
+  touch: params => {
     const dir = getDirectory(currentPath);
     params.forEach(fileName => {
       dir.structure[fileName] = {
