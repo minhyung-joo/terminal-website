@@ -9,6 +9,7 @@ export const MOVE_CURSOR_LEFT = "MOVE_CURSOR_LEFT";
 export const MOVE_CURSOR_RIGHT = "MOVE_CURSOR_RIGHT";
 export const MOVE_UP_HISTORY = "MOVE_UP_HISTORY";
 export const MOVE_DOWN_HISTORY = "MOVE_DOWN_HISTORY";
+export const AUTOCOMPLETE = "AUTOCOMPLETE";
 
 /*
  * action creators
@@ -43,4 +44,8 @@ export function moveUpHistory() {
 
 export function moveDownHistory() {
   return { type: MOVE_DOWN_HISTORY };
+}
+
+export function autocomplete() {
+  return { type: AUTOCOMPLETE };
 }

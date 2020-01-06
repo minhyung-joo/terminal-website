@@ -157,7 +157,7 @@ export const commandMap = {
 };
 
 function getDirectory(path) {
-  if (path === "") {
+  if (path === "" || path === "/") {
     return fileSystem;
   }
 
@@ -176,6 +176,81 @@ function getDirectory(path) {
   });
 
   return pointer;
+}
+
+function parsePath(path) {
+  let searchPath = currentPath;
+  let dir = getDirectory(currentPath);
+  // Multi-level paths
+  if (path.includes("/")) {
+    if (path.charAt(0) === "/") {
+      let searchPath = "/";
+      let dir = getDirectory("/");
+      path
+        .substring(0, path.length)
+        .split("/")
+        .forEach(pathName => {
+          if (dir.structure.hasOwnProperty(pathName)) {
+            searchPath += pathName + "/";
+            dir = getDirectory(searchPath);
+          } else {
+            const possiblePaths = Object.keys(dir.structure)
+              .filter(name => name.substring(0, pathName.length) === pathName)
+              .map(name => searchPath + name);
+            return possiblePaths;
+          }
+        });
+
+      return [searchPath];
+    } else {
+      const paths = path.split("/");
+      for (let i = 0; i < paths.length; i++) {
+        const subPath = paths[i];
+        if (subPath === "") {
+          const possiblePaths = Object.keys(dir.structure).map(
+            name => searchPath + name
+          );
+          return possiblePaths;
+        } else if (subPath === "..") {
+          if (searchPath.length > 0) {
+            const dirs = searchPath.split("/");
+            if (dirs.length > 2) {
+              searchPath = dirs.slice(0, dirs.length - 1).join("/");
+            } else {
+              searchPath = "/";
+            }
+
+            console.log(searchPath);
+            dir = getDirectory(searchPath);
+            console.log(dir);
+          } else {
+            const possiblePaths = Object.keys(dir.structure)
+              .filter(name => name.substring(0, subPath.length) === subPath)
+              .map(name => searchPath + name);
+            return possiblePaths;
+          }
+        } else if (dir.structure.hasOwnProperty(subPath)) {
+          searchPath += "/" + subPath;
+        } else {
+          const possiblePaths = Object.keys(dir.structure)
+            .filter(name => name.substring(0, subPath.length) === subPath)
+            .map(name => searchPath + name);
+          return possiblePaths;
+        }
+      }
+    }
+  } else {
+    if (dir.structure.hasOwnProperty(path)) {
+      searchPath += "/" + path;
+    } else {
+      const possiblePaths = Object.keys(dir.structure)
+        .filter(name => name.substring(0, path.length) === path)
+        .map(name => searchPath + name);
+      return possiblePaths;
+    }
+  }
+
+  return [searchPath];
 }
 
 export const moveUpHistory = () => {
@@ -214,5 +289,44 @@ export const handleChange = value => {
     currentBuffer = value;
   } else {
     historyEdits[historyPointer] = value;
+  }
+};
+export const autocompleteCommand = command => {
+  if (!command) {
+    return Object.keys(commandMap).join("\n");
+  }
+
+  const foundCommands = Object.keys(commandMap).filter(
+    key => key.substring(0, command.length) === command
+  );
+  if (foundCommands.length === 0) {
+    return null;
+  } else {
+    return foundCommands.join("\n");
+  }
+};
+
+export const autocompleteParam = (command, params) => {
+  if (!params.length) {
+    return Object.keys(getDirectory(currentPath).structure).join("\n");
+  }
+
+  const path = params[params.length - 1];
+  if (path === "." || path === "..") {
+    return path + "/";
+  }
+  const foundPaths = parsePath(path);
+  if (foundPaths.length === 0) {
+    return null;
+  } else {
+    return foundPaths
+      .map(p => {
+        if (p.indexOf("/") > -1) {
+          return p.split("/").pop();
+        }
+
+        return p;
+      })
+      .join("\n");
   }
 };

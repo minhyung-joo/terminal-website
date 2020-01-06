@@ -9,7 +9,8 @@ import {
   moveUpHistory,
   moveDownHistory,
   moveCursorLeft,
-  moveCursorRight
+  moveCursorRight,
+  autocomplete
 } from "./actions";
 import "./index.scss";
 
@@ -23,13 +24,15 @@ class App extends React.Component {
       moveUpHistory,
       moveDownHistory,
       moveCursorLeft,
-      moveCursorRight
+      moveCursorRight,
+      autocomplete
     } = this.props;
     printOutput(
       "Welcome to Minhyung's terminal\nYou can learn about me by snooping around\nStart by entering 'help'\n"
     );
 
     window.addEventListener("keydown", e => {
+      e.preventDefault();
       const keyCode = e.keyCode;
       if (keyCode === 8) {
         deleteOne();
@@ -56,6 +59,8 @@ class App extends React.Component {
         (keyCode >= 221 && keyCode <= 222)
       ) {
         appendText(e.key);
+      } else if (keyCode === 9) {
+        autocomplete();
       }
     });
   }
@@ -87,7 +92,8 @@ const mapDispatchToProps = dispatch => ({
   moveUpHistory: () => dispatch(moveUpHistory()),
   moveDownHistory: () => dispatch(moveDownHistory()),
   moveCursorLeft: () => dispatch(moveCursorLeft()),
-  moveCursorRight: () => dispatch(moveCursorRight())
+  moveCursorRight: () => dispatch(moveCursorRight()),
+  autocomplete: () => dispatch(autocomplete())
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(App);

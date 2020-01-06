@@ -7,14 +7,17 @@ import {
   MOVE_UP_HISTORY,
   MOVE_DOWN_HISTORY,
   MOVE_CURSOR_LEFT,
-  MOVE_CURSOR_RIGHT
+  MOVE_CURSOR_RIGHT,
+  AUTOCOMPLETE
 } from "../actions";
 import {
   commandMap,
   moveUpHistory,
   moveDownHistory,
   pushToHistory,
-  handleChange
+  handleChange,
+  autocompleteCommand,
+  autocompleteParam
 } from "../terminal";
 
 const initialState = {
@@ -24,6 +27,10 @@ const initialState = {
 };
 
 function parseInput(input) {
+  if (!input) {
+    return { command: "", params: [] };
+  }
+
   let inputStr = input.trim();
   const firstSpaceIndex = inputStr.indexOf(" ");
   if (firstSpaceIndex > 0) {
@@ -126,7 +133,7 @@ function terminal(state = initialState, action) {
 
       return state;
     case MOVE_CURSOR_LEFT:
-      return state.pointer > 2
+      return state.pointer > 0
         ? Object.assign({}, state, { pointer: state.pointer - 1 })
         : state;
     case MOVE_CURSOR_RIGHT:
@@ -149,9 +156,74 @@ function terminal(state = initialState, action) {
       };
     case PRINT_OUTPUT:
       return { ...state, stdout: state.stdout.concat(action.text) };
+    case AUTOCOMPLETE:
+      const { command, params } = parseInput(state.stdin);
+      const autocompletedCommand = autocompleteCommand(command);
+      if (autocompletedCommand.indexOf("\n") > -1) {
+        return {
+          ...state,
+          stdout: state.stdout.concat(
+            "$ ",
+            state.stdin,
+            "\n",
+            autocompletedCommand,
+            "\n"
+          )
+        };
+      }
+
+      if (!params || !params.length) {
+        return {
+          ...state,
+          stdin: autocompletedCommand,
+          pointer: autocompletedCommand.length
+        };
+      } else {
+        const autocompletedParams = autocompleteParam(command, params);
+        if (autocompletedParams) {
+          if (autocompletedParams.indexOf("\n") > -1) {
+            return {
+              ...state,
+              stdout: state.stdout.concat(
+                "$ ",
+                state.stdin,
+                "\n",
+                autocompletedParams,
+                "\n"
+              )
+            };
+          } else {
+            const newStdin = mergeStr(state.stdin, autocompletedParams);
+            return {
+              ...state,
+              stdin: newStdin,
+              pointer: newStdin.length
+            };
+          }
+        }
+      }
+
+      return state;
     default:
       return state;
   }
+}
+
+// Joins s1 and s2 by merging common substrings between the end of s1 and start of s2
+// mergeStr("asd", "sdf") = "asdf"
+function mergeStr(s1, s2) {
+  for (let i = 0; i < s2.length; i++) {
+    if (
+      s1.substring(s1.length - s2.length + i, s1.length) ===
+      s2.substring(0, s2.length - i)
+    ) {
+      return (
+        s1.substring(0, s1.length - s2.length + i) + s2.substring(0, s2.length)
+      );
+    }
+  }
+
+  return s1;
 }
 
 const terminalApp = combineReducers({
